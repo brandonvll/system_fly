@@ -7,6 +7,7 @@ function Response() {
   const [flights, setFlights] = useState([]);
   const [reservations, setReservations] = useState([]);
 
+
   const fetchAirports = async (code) => {
     try {
       const response = await fetch(process.env.REACT_APP_API_URL + "/api/airports", {
@@ -17,10 +18,13 @@ function Response() {
         body: JSON.stringify({ code }),
       });
       if (!response.ok) {
-        throw new Error(response.statusText);
+        setAirports([]);
+        const errorData = await response.json();
+        return { status: response.status, message: errorData.message || 'Error fetching airports' };
       }
       const data = await response.json();
       setAirports(data);
+      return { status: response.status };
     } catch (error) {
       console.error('Error fetching airports:', error);
     }
@@ -49,10 +53,14 @@ function Response() {
         body: JSON.stringify(requestBody),
       });
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        setFlights([]);
+        const errorData = await response.json();
+        return { status: response.status, message: errorData.message || 'Error fetching flights' };
+        
       }
       const data = await response.json();
       setFlights(data);
+      return { status: response.status };
     } catch (error) {
       console.error('Error fetching flights:', error);
     }

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Button } from '@mui/material';
+
 
 function UserForm({ onReserve, fetchAirports, fetchFlights }) {
   const [departureCity, setDepartureCity] = useState('');
@@ -10,22 +12,31 @@ function UserForm({ onReserve, fetchAirports, fetchFlights }) {
   const [arrivalDate, setArrivalDate] = useState('');
   const [cityCode, setCityCode] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessageAirport, setErrorMessageAirport] = useState('');
+  const [errorMessageFlight, setErrorMessageFlight] = useState('');
 
   const handleSubmitAirports = async (event) => {
     event.preventDefault();
-    
-
-    // Llamada al callback de reserva
-    
-    fetchAirports(cityCode);
-
-    // Enviar los datos a la API
+    const peticion = await fetchAirports(cityCode);
+    if(peticion.status !== 200){
+      setErrorMessageAirport(peticion.message);
+      setTimeout(() => {
+        setErrorMessageAirport('');
+      }, 3000);
+    }
     
   };
   
   const handleSubmitFlights = async (event) => {
     event.preventDefault();
-    fetchFlights(departureCityFetch, arrivalCityFetch, departureTimeFetch);
+    const peticion = await fetchFlights(departureCityFetch, arrivalCityFetch, departureTimeFetch);
+    if(peticion.status !== 200){
+      setErrorMessageFlight(peticion.message);
+      setTimeout(() => {
+        setErrorMessageFlight('');
+      }, 3000);
+    }
+    
   };
 
   const reserveFlight = async (event) => {
@@ -111,7 +122,9 @@ function UserForm({ onReserve, fetchAirports, fetchFlights }) {
             required
           />
         </div>
-        <button type="submit">Reservar</button>
+        <Button type="submit" variant="contained" color="success" fullWidth sx={{ mt: 2 }}>
+          Registrar reserva
+        </Button>
       </form>
       {successMessage && <div className="success-message">{successMessage}</div>}
       <hr></hr>
@@ -126,7 +139,16 @@ function UserForm({ onReserve, fetchAirports, fetchFlights }) {
             required
           />
         </div>
-        <button type="submit">Buscar</button>
+        <Button type="submit" variant="contained" color="success" fullWidth sx={{ mt: 2 }}>
+          Buscar
+        </Button>
+        
+        <div>
+        <br></br>
+          {errorMessageAirport && <div className="error-message">{errorMessageAirport}</div>}
+        </div>
+        
+
       </form>
       <hr></hr>
       <h2>Buscar Vuelos</h2>
@@ -158,7 +180,13 @@ function UserForm({ onReserve, fetchAirports, fetchFlights }) {
             required
           />
         </div>
-        <button type="submit">Buscar</button>
+        <Button type="submit" variant="contained" color="success" fullWidth sx={{ mt: 2 }}>
+          Buscar
+        </Button>
+        <div>
+        <br></br>
+          {errorMessageFlight && <div className="error-message">{errorMessageFlight}</div>}
+        </div>
       </form>
     </div>
   );
