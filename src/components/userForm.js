@@ -1,101 +1,164 @@
 import React, { useState } from 'react';
 
-function UserForm( airports, flights, onReserve ) {
-  const [cedula, setCedula] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [equipaje, setEquipaje] = useState('');
-  const [edad, setEdad] = useState('');
-  const [selectedAirport, setSelectedAirport] = useState('');
-  const [selectedFlight, setSelectedFlight] = useState('');
+function UserForm({ onReserve, fetchAirports, fetchFlights }) {
+  const [departureCity, setDepartureCity] = useState('');
+  const [arrivalCity, setArrivalCity] = useState('');
+  const [departureTime, setDepartureTime] = useState('');
+  const [departureCityFetch, setDepartureCityFetch] = useState('');
+  const [arrivalCityFetch, setArrivalCityFetch] = useState('');
+  const [departureTimeFetch, setDepartureTimeFetch] = useState('');
+  const [arrivalDate, setArrivalDate] = useState('');
+  const [cityCode, setCityCode] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleSubmit = (event) => {
+  const handleSubmitAirports = async (event) => {
+    event.preventDefault();
+    
+
+    // Llamada al callback de reserva
+    
+    fetchAirports(cityCode);
+
+    // Enviar los datos a la API
+    
+  };
+  
+  const handleSubmitFlights = async (event) => {
+    event.preventDefault();
+    fetchFlights(departureCityFetch, arrivalCityFetch, departureTimeFetch);
+  };
+
+  const reserveFlight = async (event) => {
     event.preventDefault();
     const userData = {
-      cedula,
-      nombre,
-      equipaje,
-      edad,
-      selectedAirport,
-      selectedFlight,
+      departureCity,
+      arrivalCity,
+      departureTime,
+      itineraries: [
+        {
+          origin: departureCity,
+          destination: arrivalCity,
+          departureDate: departureTime,
+          arrivalDate: arrivalDate,
+        },
+      ],
     };
     onReserve(userData);
-    // Aquí puedes agregar la lógica para guardar los datos del usuario
+  
+    if(userData){
+      try {
+        const response = await fetch(process.env.REACT_APP_API_URL+'/api/reserve', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Error en la solicitud');
+        }
+  
+        const result = await response.json();
+        console.log('Respuesta de la API:', result);
+        setSuccessMessage(result.message);
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+      } catch (error) {
+        console.error('Error al enviar los datos:', error);
+      }
+    }
   };
 
   return (
     <div className="UserForm">
-      <h2>Registro de Usuario</h2>
-      <form onSubmit={handleSubmit}>
+      <h2>Registro de Reserva de Vuelos</h2>
+      <form onSubmit={reserveFlight}>
         <div>
-          <label>Cédula:</label>
+          <label>Ciudad de Salida:</label>
           <input
             type="text"
-            value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
+            value={departureCity}
+            onChange={(e) => setDepartureCity(e.target.value)}
             required
           />
         </div>
         <div>
-          <label>Nombre:</label>
+          <label>Ciudad de Llegada:</label>
           <input
             type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            value={arrivalCity}
+            onChange={(e) => setArrivalCity(e.target.value)}
             required
           />
         </div>
         <div>
-          <label>Tipo de Equipaje:</label>
-          <select
-            value={equipaje}
-            onChange={(e) => setEquipaje(e.target.value)}
-            required
-          >
-            <option value="">Seleccione</option>
-            <option value="Equipaje Mano">Equipaje Mano</option>
-            <option value="Bolso">Bolso</option>
-          </select>
-        </div>
-        <div>
-          <label>Edad:</label>
+          <label>Hora de Salida:</label>
           <input
-            type="number"
-            value={edad}
-            onChange={(e) => setEdad(e.target.value)}
+            type="datetime-local"
+            value={departureTime}
+            onChange={(e) => setDepartureTime(e.target.value)}
             required
           />
         </div>
         <div>
-          <label>Aeropuerto:</label>
-          <select
-            value={selectedAirport}
-            onChange={(e) => setSelectedAirport(e.target.value)}
+          <label>Fecha de Llegada:</label>
+          <input
+            type="datetime-local"
+            value={arrivalDate}
+            onChange={(e) => setArrivalDate(e.target.value)}
             required
-          >
-            <option value="">Seleccione</option>
-            {airports.map((airport) => (
-              <option key={airport.id} value={airport.id}>
-                {airport.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label>Vuelo:</label>
-          <select
-            value={selectedFlight}
-            onChange={(e) => setSelectedFlight(e.target.value)}
-            required
-          >
-            <option value="">Seleccione</option>
-            {flights.map((flight, index) => (
-              <option key={index} value={flight.flightOrtrainNumber}>
-                {flight.flightOrtrainNumber} - {flight.locationId.departureCity} to {flight.locationId.arrivalCity}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <button type="submit">Reservar</button>
+      </form>
+      {successMessage && <div className="success-message">{successMessage}</div>}
+      <hr></hr>
+      <h2>Buscar Aeropuertos</h2>
+      <form onSubmit={handleSubmitAirports}>
+        <div>
+          <label>Código de la Ciudad:</label>
+          <input
+            type="text"
+            value={cityCode}
+            onChange={(e) => setCityCode(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit">Buscar</button>
+      </form>
+      <hr></hr>
+      <h2>Buscar Vuelos</h2>
+      <form onSubmit={handleSubmitFlights}>
+        <div>
+          <label>Ciudad de origen:</label>
+          <input
+            type="text"
+            value={departureCityFetch}
+            onChange={(e) => setDepartureCityFetch(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Ciudad de destino:</label>
+          <input
+            type="text"
+            value={arrivalCityFetch}
+            onChange={(e) => setArrivalCityFetch(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Fecha:</label>
+          <input
+            type="datetime-local"
+            value={departureTimeFetch }
+            onChange={(e) => setDepartureTimeFetch(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit">Buscar</button>
       </form>
     </div>
   );

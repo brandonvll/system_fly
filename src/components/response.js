@@ -1,4 +1,4 @@
-// FILE: src/Home.js
+
 import React, { useState } from 'react';
 import UserForm from './userForm';
 
@@ -7,9 +7,18 @@ function Response() {
   const [flights, setFlights] = useState([]);
   const [reservations, setReservations] = useState([]);
 
-  const fetchAirports = async () => {
+  const fetchAirports = async (code) => {
     try {
-      const response = await fetch(process.env.REACT_APP_API_URL);
+      const response = await fetch(process.env.REACT_APP_API_URL + "/api/airports", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
       const data = await response.json();
       setAirports(data);
     } catch (error) {
@@ -17,52 +26,81 @@ function Response() {
     }
   };
 
-  const fetchFlights = async () => {
+  const fetchFlights = async (departureCity, arrivalCity, hour) => {
+    const requestBody = {
+      searchs: 250,
+      qtyPassengers: 1,
+      adult: 1,
+      itinerary: [
+        {
+          departureCity,
+          arrivalCity,
+          hour,
+        },
+      ],
+    };
+
     try {
-      const response = await fetch(process.env.REACT_APP_FLIGHTS_API_URL);
+      const response = await fetch(process.env.REACT_APP_API_URL + "/api/flights", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const data = await response.json();
       setFlights(data);
     } catch (error) {
       console.error('Error fetching flights:', error);
     }
+    
   };
 
-    const handleReserve = (userData) => {
+  const handleReserve = (userData) => {
     setReservations([...reservations, userData]);
   };
 
   return (
     <div className="Response">
-      <UserForm airports={airports} flights={flights} onReserve={handleReserve} />
-      <h2>Aeropuertos</h2>
-      <button onClick={fetchAirports}>Consultar Aeropuertos</button>
+      <UserForm airports={airports} flights={flights}  onReserve={handleReserve} fetchAirports={fetchAirports} fetchFlights={fetchFlights} />
+      
       {airports.length > 0 && (
+        <>
+        <h2>Aeropuertos</h2>
         <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>City</th>
-              <th>Name</th>
-              <th>Country</th>
-              <th>IATA</th>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Ciudad</th>
+            <th>Nombre</th>
+            <th>País</th>
+            <th>IATA</th>
+            <th>Creado en</th>
+            <th>Actualizado en</th>
+          </tr>
+        </thead>
+        <tbody>
+          {airports.map((airport, index) => (
+            <tr key={index}>
+              <td>{airport.id}</td>
+              <td>{airport.city}</td>
+              <td>{airport.name}</td>
+              <td>{airport.country}</td>
+              <td>{airport.iata}</td>
+              <td>{airport.created_at}</td>
+              <td>{airport.updated_at}</td>
             </tr>
-          </thead>
-          <tbody>
-            {airports.map((airport, index) => (
-              <tr key={index}>
-                <td>{airport.id}</td>
-                <td>{airport.city}</td>
-                <td>{airport.name}</td>
-                <td>{airport.country}</td>
-                <td>{airport.iata}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          ))}
+        </tbody>
+      </table>
+      </>
       )}
-       <h2>Vuelos</h2>
-      <button onClick={fetchFlights}>Consultar Vuelos</button>
       {flights.length > 0 && (
+        <>
+        <h2>Vuelos</h2>
         <table>
           <thead>
             <tr>
@@ -90,29 +128,8 @@ function Response() {
               </tr>
             ))}
           </tbody>
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Type Equipment</th>
-              <th>Age</th>
-              <th>Airport</th>
-              <th>Fly</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reservations.map((reservation, index) => (
-              <tr key={index}>
-                <td>{reservation.id}</td>
-                <td>{reservation.name}</td>
-                <td>{reservation.equipment}</td>
-                <td>{reservation.age}</td>
-                <td>{reservation.selectedAirport}</td>
-                <td>{reservation.selectedFlight}</td>
-              </tr>
-            ))}
-          </tbody>
         </table>
+        </>
       )}
     </div>
   );
